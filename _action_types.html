@@ -1,0 +1,233 @@
+<h2><u>Action Type</u></h2>
+<p>Contains details of the types of Action that a technician can take during a repair</p>
+<h3><u>The action_type object</u></h3>
+<table>
+<thead>
+<tr>
+<th align="right">Field</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right"><strong>action_type_id</strong> <br><font color="DarkGray"><em>int</em></font> <font color="Crimson"><strong>(primary key)</strong></font></td>
+<td align="left">A unique integer identifier for each action_type.</td>
+</tr>
+<tr>
+<td align="right"><strong>name</strong> <br><font color="DarkGray"><em>string</em></font> <font color="Crimson">(not-null,unique)</font></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="right"><strong>description</strong> <br><font color="DarkGray"><em>string</em></font> <font color="Crimson"></font></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="right"><strong>label</strong> <br><font color="DarkGray"><em>string</em></font> <font color="Crimson">(not-null,unique)</font></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="right"><strong>created_at</strong>  <br><font color="DarkGray"><em>datetime</em></font></td>
+<td align="left">timestamp that the record was created at</td>
+</tr>
+<tr>
+<td align="right"><strong>created_by</strong>  <br><font color="DarkGray"><em>text</em></font></td>
+<td align="left">username of the user who created the record</td>
+</tr>
+<tr>
+<td align="right"><strong>modified_at</strong> <br><font color="DarkGray"><em>datetime</em></font></td>
+<td align="left">timestamp that the record was last modified</td>
+</tr>
+<tr>
+<td align="right"><strong>modified_by</strong> <br><font color="DarkGray"><em>text</em></font></td>
+<td align="left">user that last modified the record</td>
+</tr>
+</tbody>
+</table>
+<br>
+<table>
+<thead>
+<tr>
+<th align="right">Relationship</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right"><strong>action_type_product_type_linker</strong></td>
+<td align="left">The associated action_type_product_type_linker</td>
+</tr>
+<tr>
+<td align="right"><strong>repair_action_type_linker</strong></td>
+<td align="left">The associated repair_action_type_linker</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<br>
+<blockquote>
+<p>An example POST request. Note that <code>action_type_id</code>, <code>created_at</code>, <code>modified_at</code> and <code>created_by</code> are all handled internally by the system and need not be explicitly specified. See Meta Data for more information.</p>
+</blockquote>
+<pre><code class="language-python">    url = &quot;https://smartapi.bboxx.co.uk/v1/action_types&quot;
+    data = json.dumps({
+		&quot;name&quot;: &quot;test&quot;,
+		&quot;description&quot;: &quot;test&quot;,
+		&quot;label&quot;: &quot;test&quot;,
+		})
+    headers = {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;, &#x27;Authorization&#x27;: &#x27;Token token=A_VALID_TOKEN&#x27;}
+
+    r = requests.post(url=url, data=data, headers=headers)
+
+    r
+    &gt;&gt;&gt; &lt;Response 201&gt;
+
+    r.json()
+
+    &gt;&gt;&gt; {
+		&quot;action_type_id&quot;: 1
+		&quot;name&quot;: &quot;test&quot;,
+		&quot;description&quot;: &quot;test&quot;,
+		&quot;label&quot;: &quot;test&quot;,
+		&quot;created_at&quot;: &quot;2000-01-01 00:00:00&quot;
+		&quot;created_by&quot;: &quot;test.user@bboxx.co.uk&quot;
+		&quot;modified_at&quot;: None
+	}
+</code></pre>
+<pre><code>&gt; We can retrieve the `action_type` created by specifying its `action_type_id` in the request url:
+</code></pre>
+<pre><code class="language-python">    url = &#x27;https://smartapi.bboxx.co.uk/v1/action_types/1&#x27;
+    headers = {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;, &#x27;Authorization&#x27;: &#x27;Token token=A_VALID_TOKEN&#x27;}
+
+    r = requests.get(url=url, headers=headers)
+
+    r
+    &gt;&gt;&gt; &lt;Response 200&gt;
+
+    r.json()
+    &gt;&gt;&gt; {
+		&quot;action_type_id&quot;: 1
+		&quot;name&quot;: &quot;test&quot;,
+		&quot;description&quot;: &quot;test&quot;,
+		&quot;label&quot;: &quot;test&quot;,
+		&quot;created_at&quot;: &quot;2000-01-01 00:00:00&quot;
+		&quot;created_by&quot;: &quot;test.user@bboxx.co.uk&quot;
+		&quot;modified_at&quot;: None
+	}
+</code></pre>
+<blockquote>
+<p>We can retrieve all <code>action_types</code> by omitting the <code>action_type_id</code>:</p>
+</blockquote>
+<pre><code class="language-python">    url = &#x27;https://smartapi.bboxx.co.uk/v1/action_types&#x27;
+    headers = {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;, &#x27;Authorization&#x27;: &#x27;Token token=A_VALID_TOKEN&#x27;}
+
+    r = requests.get(url=url, headers=headers)
+
+    r
+    &gt;&gt;&gt; &lt;Response 200&gt;
+
+    r.json()
+    &gt;&gt;&gt; {
+        u&#x27;total_pages&#x27;: 1,
+        u&#x27;objects&#x27;: [
+            {&lt;record&gt;},
+            {&lt;record&gt;},
+            {&lt;record&gt;},
+            {&lt;record&gt;},
+            {&lt;record&gt;},
+        ],
+        u&#x27;num_results&#x27;: 10,
+        u&#x27;page&#x27;: 1
+    }
+</code></pre>
+<blockquote>
+<p>We can edit the newly created <code>action_type</code> with a <code>PUT</code> request:</p>
+</blockquote>
+<pre><code class="language-python">    url = &#x27;https://smartapi.bboxx.co.uk/v1/action_types/1&#x27;
+    data = json.dumps({
+		&quot;name&quot;: &quot;changed&quot;,
+		&quot;description&quot;: &quot;changed&quot;,
+		&quot;label&quot;: &quot;changed&quot;,
+		})
+    headers = {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;, &#x27;Authorization&#x27;: &#x27;Token token=A_VALID_TOKEN&#x27;}
+
+    r = requests.put(url=url, data=data, headers=headers)
+
+    r
+    &gt;&gt;&gt; &lt;Response 200&gt;
+
+    r.json()
+    &gt;&gt;&gt; {
+		&quot;action_type_id&quot;: 1
+		&quot;name&quot;: &quot;changed&quot;,
+		&quot;description&quot;: &quot;changed&quot;,
+		&quot;label&quot;: &quot;changed&quot;,
+		&quot;created_at&quot;: &quot;2000-01-01 00:00:00&quot;
+		&quot;created_by&quot;: &quot;test.user@bboxx.co.uk&quot;
+		&quot;modified_at&quot;: 2016-07-07 12:34:45
+	}
+</code></pre>
+<blockquote>
+<p>Note that the <code>modified_at</code> field has been updated accordingly.</p>
+</blockquote>
+<blockquote>
+<p>If a user has <code>SYSTEM</code> permissions they can delete the <code>action_type</code></p>
+</blockquote>
+<pre><code class="language-python">    url = &#x27;https://smartapi.bboxx.co.uk/v1/action_types/1&#x27;
+    headers = {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;, &#x27;Authorization&#x27;: &#x27;Token token=A_VALID_TOKEN&#x27;}
+
+    r = requests.delete(url=url, headers=headers)
+
+    r
+    &gt;&gt;&gt; &lt;Response 204&gt;
+
+    r.text
+    &gt;&gt;&gt;
+</code></pre>
+<blockquote>
+<p>Note that the response from a 204 request is empty. This means that <code>r.json()</code> cannot be called and will throw a JSONDecodeError. In fact the response is <code>u&#x27;&#x27;</code> - an empty unicode string.</p>
+</blockquote>
+<h3>POST</h3>
+<pre><code> | value
+</code></pre>
+<p>----:|:---
+endpoint | <code>/v1/action_types</code>
+method | <code>POST</code>
+url_params | <font color="DarkGray">N/A</font>
+query params | <font color="DarkGray">N/A</font>
+body | JSON-formatted dictionary with the details of the <code>action_type</code> that you wish to create
+permissions | <font color="Crimson">__<code>SYSTEM</code>__</font>
+response | <code>201</code></p>
+<h3>GET</h3>
+<pre><code> | value
+</code></pre>
+<p>----:|:---
+endpoint | <code>/v1/action_types</code> or <code>/v1/action_types/&lt;action_type_id&gt;</code>
+method | <code>GET</code>
+url_params | <code>action_type_id</code> <font color="DarkGray"><em>(int)</em></font>
+query params | <em>&gt; See Query Format and Filtering</em>
+body | <font color="DarkGray">N/A</font>
+permissions | <font color="Jade">__<code>OVERVIEW</code>__</font>
+response | <code>200</code></p>
+<h3>PUT</h3>
+<pre><code> | value
+</code></pre>
+<p>----:|:---
+endpoint | <code>/v1/action_types/&lt;action_type_id&gt;</code>
+method | <code>PUT</code>
+url_params | <code>action_type_id</code> of the action_type you wish to edit
+query params | <font color="DarkGray">N/A</font>
+body | JSON-formatted dictionary of the columns that you wish to alter
+permissions | <font color="Crimson">__<code>SYSTEM</code>__</font>
+response | <code>200</code></p>
+<h3>DELETE</h3>
+<pre><code> | value
+</code></pre>
+<p>----:|:---
+endpoint | <code>/v1/action_types/&lt;action_type_id&gt;</code>
+method | <code>DELETE</code>
+url_params | <code>action_type_id</code> <font color="DarkGray"><em>(int)</em></font>
+query params | <font color="DarkGray">N/A</font>
+body | <font color="DarkGray">N/A</font>
+permissions | <font color="Crimson">__<code>SYSTEM</code>__</font>
+response | <code>204</code></p>
+<pre><code>
+</code></pre>
