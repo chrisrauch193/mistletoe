@@ -6,13 +6,15 @@ import re
 import sys
 from itertools import chain
 from urllib.parse import quote
-from mistletoe.block_token import HTMLBlock
-from mistletoe.span_token import HTMLSpan
+from mistletoe.block_token import HTMLBlock, SlateTopToken, SlateBottomToken
+from mistletoe.span_token import HTMLSpan, RawText
 from mistletoe.base_renderer import BaseRenderer
 if sys.version_info < (3, 4):
     from mistletoe import _html as html
 else:
     import html
+
+from mistletoe.span_token import SpanToken
 
 
 class SlateHTMLRenderer(BaseRenderer):
@@ -21,13 +23,17 @@ class SlateHTMLRenderer(BaseRenderer):
 
     See mistletoe.base_renderer module for more info.
     """
+
+    settings = {'title': 'BBOXX Smart Solar API Reference', 'language_tabs': ['python', 'js'], 'toc_footers': ["<a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>"], 'includes': ['_introduction.md', '_schema.md', '_action_type_product_type_linker.md'], 'search': True}
+
+
     def __init__(self, *extras):
         """
         Args:
             extras (list): allows subclasses to add even more custom tokens.
         """
         self._suppress_ptag_stack = [False]
-        super().__init__(*chain((HTMLBlock, HTMLSpan), extras))
+        super().__init__(*chain((HTMLBlock, HTMLSpan, SlateTopToken, SlateBottomToken), extras))
         # html.entities.html5 includes entitydefs not ending with ';',
         # CommonMark seems to hate them, so...
         self._stdlib_charref = html._charref
@@ -35,6 +41,8 @@ class SlateHTMLRenderer(BaseRenderer):
                               r'|#[xX][0-9a-fA-F]+;'
                               r'|[^\t\n\f <&#;]{1,32};)')
         html._charref = _charref
+
+        print(self.settings)
 
     def __exit__(self, *args):
         super().__exit__(*args)
@@ -101,9 +109,15 @@ class SlateHTMLRenderer(BaseRenderer):
         return token.content
 
     def render_heading(self, token):
-        template = '<h{level}>{inner}</h{level}>'
+        template = '<h{level} id="{id}">{inner}</h{level}>'
         inner = self.render_inner(token)
-        return template.format(level=token.level, inner=inner)
+        id = self.render_heading_id(token)
+        return template.format(level=token.level, id=id, inner=inner)
+
+    # TODO: Finish this
+    def render_heading_id(self, token):
+        rawTextChildTokens = list(filter(lambda child: isinstance(child, RawText), token.children))
+        return ''.join(map(self.render, rawTextChildTokens)).replace(" ", "-").lower()
 
     def render_quote(self, token):
         elements = ['<blockquote>']
@@ -183,7 +197,7 @@ class SlateHTMLRenderer(BaseRenderer):
             align = 'center'
         elif token.align == 1:
             align = 'right'
-        attr = ' align="{}"'.format(align)
+        attr = ' style="text-align: {}"'.format(align)
         inner = self.render_inner(token)
         return template.format(tag=tag, attr=attr, inner=inner)
 
@@ -202,7 +216,95 @@ class SlateHTMLRenderer(BaseRenderer):
     def render_document(self, token):
         self.footnotes.update(token.footnotes)
         inner = '\n'.join([self.render(child) for child in token.children])
-        return '{}\n'.format(inner) if inner else ''
+        slate_top = self.render_slate_top()
+        slate_bottom = self.render_slate_bottom()
+        fullDocument = '\n'.join([slate_top, inner, slate_bottom])
+        return '{}\n'.format(fullDocument) if inner else ''
+
+    def render_slate_top(self):
+        f = open("mistletoe/slate_files/template_top.html", "r")
+        return f.read() + self.render_toc_wrapper()
+
+    def add_slate_title(self, slate_top):
+        if "title" in self.settings:
+            slate_top = slate_top + "\t<title>" + self.settings["title"] + "</title>\n"
+        return slate_top
+
+    def add_slate_language_tabs_body(self):
+        slate_language_tabs_body = '<body class="index" data-languages="['
+        if "language_tabs" in self.settings:
+            for language in self.settings["language_tabs"]:
+                slate_language_tabs_body = slate_language_tabs_body + "&quot;" + language + "&quot;,"
+        slate_language_tabs_body = slate_language_tabs_body[:len(slate_language_tabs_body) - 1] + ']">\n'
+        return slate_language_tabs_body
+
+    def render_toc_wrapper(self):
+        toc_wrapper = self.add_slate_language_tabs_body()
+        toc_wrapper = toc_wrapper + '<div class="toc-wrapper">\n<img src="images/logo-1e815a84.png" class="logo" alt="Logo"/>\n'
+        toc_wrapper = toc_wrapper + self.add_language_selector()
+        toc_wrapper = toc_wrapper + self.add_search()
+        toc_wrapper = toc_wrapper + self.add_toc_footers()
+        toc_wrapper = toc_wrapper + '</div>\n'
+        return toc_wrapper
+
+    def add_language_selector(self):
+        language_selector = '<div class="lang-selector">\n'
+        if "language_tabs" in self.settings:
+            for language in self.settings["language_tabs"]:
+                language_selector = language_selector + '<a href="#" data-language-name="' + language + '">' + language + '</a>\n'
+        language_selector = language_selector + '</div>\n'
+        return language_selector
+
+    def add_search(self):
+        search = """
+          <div class="search">
+    <input type="text" class="search" id="input-search" placeholder="Search">
+  </div>
+  <ul class="search-results"></ul>
+  <ul id="toc" class="toc-list-h1">
+    <li>
+      <a href="#introduction" class="toc-h1 toc-link" data-title="Introduction">Introduction</a>
+    </li>
+    <li>
+      <a href="#schema" class="toc-h1 toc-link" data-title="Schema">Schema</a>
+      <ul class="toc-list-h2">
+        <li>
+          <a href="#action-type-product-type-linker" class="toc-h2 toc-link"
+             data-title="Action Type Product Type Linker"><u>Action Type Product Type Linker</u></a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+        """
+        return search
+
+    def add_toc_footers(self):
+        toc_footers = '<ul class="toc-footer">\n'
+        if "toc_footers" in self.settings:
+            for toc_footer in self.settings["toc_footers"]:
+                toc_footers = toc_footers + '<li>' + toc_footer + '</li>\n'
+        toc_footers = toc_footers + '</ul>\n'
+        return toc_footers
+
+    def render_slate_bottom(self):
+        # f = open("mistletoe/slate_files/template_bottom.html", "r")
+        # return f.read()
+        bottom = """
+
+  </div>
+  <div class="dark-box">
+        """
+
+        bottom = bottom + self.add_language_selector()
+
+        bottom = bottom + """
+  </div>
+</div>
+</body>
+</html>
+        """
+        return bottom
+
 
     @staticmethod
     def escape_html(raw):

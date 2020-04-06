@@ -952,6 +952,32 @@ class HTMLBlock(BlockToken):
         return line_buffer
 
 
+class SlateTopToken(BlockToken):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def start(cls, lines):
+        pass
+
+    @classmethod
+    def read(cls, lines):
+        pass
+
+
+
+class SlateBottomToken(BlockToken):
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def start(cls, lines):
+        pass
+
+    @classmethod
+    def read(cls, lines):
+        pass
+
+
 _token_types = []
 reset_tokens()
-
