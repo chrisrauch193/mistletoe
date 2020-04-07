@@ -16,6 +16,10 @@ else:
 
 from mistletoe.span_token import SpanToken
 
+import os
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 
 class SlateHTMLRenderer(BaseRenderer):
     """
@@ -112,7 +116,28 @@ class SlateHTMLRenderer(BaseRenderer):
         template = '<h{level} id="{id}">{inner}</h{level}>'
         inner = self.render_inner(token)
         id = self.render_heading_id(token)
+        self.add_heading_to_search(token)
+        print("HEADER TEST")
+        print(self.settings)
+        print("HEADER TEST DONE")
         return template.format(level=token.level, id=id, inner=inner)
+
+    def add_heading_to_search(self, token):
+        if "search_list" not in self.settings:
+            self.settings["search_list"] = []
+        if token.level == 1:
+            self.settings["search_list"].append([self.render_inner(token), []])
+        if token.level == 2:
+            if len(self.settings["search_list"]) > 0:
+                # print(self.settings["search"][len(self.settings["search"]) - 1])
+                # self.settings["search_list"][len(self.settings["search_list"]) - 1][1].append(self.render(token.children[1]))
+                search_sub_heading = "ERROR"
+                if len(token.children) > 1:
+                    search_sub_heading = self.render(token.children[1])
+                else:
+                    search_sub_heading = self.render_inner(token)
+                search_sub_heading = search_sub_heading.replace("<code>", "").replace("</code>", "")
+                self.settings["search_list"][len(self.settings["search_list"]) - 1][1].append(search_sub_heading)
 
     # TODO: Finish this
     def render_heading_id(self, token):
@@ -219,10 +244,11 @@ class SlateHTMLRenderer(BaseRenderer):
         slate_top = self.render_slate_top()
         slate_bottom = self.render_slate_bottom()
         fullDocument = '\n'.join([slate_top, inner, slate_bottom])
+
         return '{}\n'.format(fullDocument) if inner else ''
 
     def render_slate_top(self):
-        f = open("mistletoe/slate_files/template_top.html", "r")
+        f = open(os.path.join(__location__, "slate_files/template_top.html"), "r")
         return f.read() + self.render_toc_wrapper()
 
     def add_slate_title(self, slate_top):
@@ -244,7 +270,12 @@ class SlateHTMLRenderer(BaseRenderer):
         toc_wrapper = toc_wrapper + self.add_language_selector()
         toc_wrapper = toc_wrapper + self.add_search()
         toc_wrapper = toc_wrapper + self.add_toc_footers()
-        toc_wrapper = toc_wrapper + '</div>\n'
+        toc_wrapper = toc_wrapper + """
+        </div>
+<div class="page-wrapper">
+    <div class="dark-box"></div>
+    <div class="content">
+        """
         return toc_wrapper
 
     def add_language_selector(self):
@@ -262,21 +293,64 @@ class SlateHTMLRenderer(BaseRenderer):
   </div>
   <ul class="search-results"></ul>
   <ul id="toc" class="toc-list-h1">
-    <li>
-      <a href="#introduction" class="toc-h1 toc-link" data-title="Introduction">Introduction</a>
-    </li>
-    <li>
-      <a href="#schema" class="toc-h1 toc-link" data-title="Schema">Schema</a>
-      <ul class="toc-list-h2">
-        <li>
-          <a href="#action-type-product-type-linker" class="toc-h2 toc-link"
-             data-title="Action Type Product Type Linker"><u>Action Type Product Type Linker</u></a>
-        </li>
-      </ul>
-    </li>
-  </ul>
         """
+        search = search + self.add_search_list_items()
+        search = search + "</ul>\n"
+
+#         search = search + "</ul>\n"
+#   """
+#     <li>
+#       <a href="#introduction" class="toc-h1 toc-link" data-title="Introduction">Introduction</a>
+#     </li>
+#     <li>
+#       <a href="#schema" class="toc-h1 toc-link" data-title="Schema">Schema</a>
+#       <ul class="toc-list-h2">
+#         <li>
+#           <a href="#action-type-product-type-linker" class="toc-h2 toc-link"
+#              data-title="Action Type Product Type Linker"><u>Action Type Product Type Linker</u></a>
+#         </li>
+#       </ul>
+#     </li>
+#   </ul>
+#         """
         return search
+
+
+    def add_search_list_items(self):
+        if "search_list" in self.settings:
+            for search_item_l1, search_item_l2_list in self.settings["search_list"]:
+                search_list_item = "<li>\n"
+
+                search_item_l1_hashtag = search_item_l1.lower()
+                if search_item_l1_hashtag[0] == "/":
+                   search_item_l1_hashtag = search_item_l1_hashtag[1::].replace('/', '-')
+                search_list_item = search_list_item + '<a href="#{}" class="toc-h1 toc-link" data-title="{}">{}</a>\n'.format(search_item_l1_hashtag, search_item_l1, search_item_l1)
+                if len(search_item_l2_list) > 0:
+                    search_list_item = search_list_item + self.add_search_list_sub_item(search_item_l2_list)
+                
+                search_list_item = search_list_item + "</li>\n"
+
+        return search_list_item
+
+    def add_search_list_sub_item(self, search_item_l2_list):
+        add_search_list_sub_item = """
+      <ul class="toc-list-h2">
+        """
+
+        for search_item_l2 in search_item_l2_list:
+            add_search_list_sub_item = add_search_list_sub_item + "<li>\n"
+            search_item_l2_hashtag = search_item_l2.lower().replace(' ', '-')
+            if search_item_l2_hashtag[0] == "/":
+                search_item_l2_hashtag = search_item_l2_hashtag[1::].replace('/', '-')
+            add_search_list_sub_item = add_search_list_sub_item + '<a href="#{}" class="toc-h2 toc-link" data-title="{}"><u>{}</u></a>\n'.format(search_item_l2_hashtag, search_item_l2, search_item_l2)
+            add_search_list_sub_item = add_search_list_sub_item + "</li>\n"
+
+
+        add_search_list_sub_item = add_search_list_sub_item + """
+      </ul>\n
+        """
+        return add_search_list_sub_item
+
 
     def add_toc_footers(self):
         toc_footers = '<ul class="toc-footer">\n'
@@ -287,7 +361,7 @@ class SlateHTMLRenderer(BaseRenderer):
         return toc_footers
 
     def render_slate_bottom(self):
-        # f = open("mistletoe/slate_files/template_bottom.html", "r")
+        # f = open(os.path.join(__location__, "slate_files/template_bottom.html"), "r")
         # return f.read()
         bottom = """
 
